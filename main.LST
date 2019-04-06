@@ -1,4 +1,4 @@
-C51 COMPILER V8.02   MAIN                                                                  04/04/2019 21:20:24 PAGE 1   
+C51 COMPILER V8.02   MAIN                                                                  04/06/2019 21:12:39 PAGE 1   
 
 
 C51 COMPILER V8.02, COMPILATION OF MODULE MAIN
@@ -25,8 +25,8 @@ line level    source
   16          unsigned char DispBuf[8];
   17          unsigned char T0_count=0;         //计数器T0溢出次数
   18          unsigned char key_num=2;                  //闸门序号
-  19          unsigned char dp_num=2;           //小数点位置
-  20          unsigned char k='0';            //定义键值变量
+  19          unsigned char dp_num=0;           //小数点位置
+  20          unsigned char k;                //定义键值变量
   21          //extern unsigned char num_long=0;
   22          
   23          unsigned char KeyScan()                 //键盘扫描
@@ -59,296 +59,281 @@ line level    source
   50   2              }
   51   1      }
   52          
-  53          
-  54          void DispChar(unsigned char x, unsigned char c )
-  55          {
-C51 COMPILER V8.02   MAIN                                                                  04/04/2019 21:20:24 PAGE 2   
+  53          /*
+  54          函数：DispChar()
+  55          功能：在数码管上显示字符
+C51 COMPILER V8.02   MAIN                                                                  04/06/2019 21:12:39 PAGE 2   
 
-  56   1              code unsigned char Tab[] =
-  57   1              {//定义0123456789AbCdEF的数码管字型数据
-  58   1                      0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,
-  59   1                      0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71
-  60   1              };
-  61   1              unsigned char t;        //临时变量
-  62   1      //防止显示位置超出范围  
-  63   1          x&=0x07;
-  64   1              x = 7-x ;
-  65   1      //分析字符c，取得对应的数码管字型数据
-  66   1              if ( c == '-' )
-  67   1              {
-  68   2                      t = 0x40;
-  69   2              }
-  70   1              else
-  71   1              {
-  72   2                      t = toint(c);   //toint()为库函数
-  73   2                      if ( t < 16 )   //如果是16进制字符
-  74   2                      {
-  75   3                              t = Tab[t];     //查表，取得数码管字型数据
-  76   3                      }
-  77   2                      else
-  78   2                      {
-  79   3                              t = 0x00;       //如果是其它字符则显示为空白
-  80   3                      }
-  81   2              }
-  82   1      
-  83   1      //检查是否显示小数点
-  84   1              if ( x==dp_num )
-  85   1              {
-  86   2                      t |= 0x80;
-  87   2              }
-  88   1              else
-  89   1              {
-  90   2                      t &= 0x7F;
-  91   2              }
-  92   1              
-  93   1      //送到显示缓冲区显示
-  94   1              DispBuf[x] = t;
-  95   1      }
-  96          
-  97          
-  98          void DispStr(unsigned char x, unsigned char idata *s)
-  99          {
- 100   1              unsigned char c;
- 101   1              for (;;)
- 102   1              {
- 103   2                      c = *s++;
- 104   2                      if ( c == '\0' ) break;
- 105   2                      if ( c=='0'&&(++c)!='0'&&x!=(dp_num+1))                 //消影，清除无意义的零
- 106   2                      {x++;continue;}
- 107   2                      DispChar(x++,c);
- 108   2              }
- 109   1      }
- 110          
- 111          void ByteToStr(unsigned char idata *s, unsigned long c)
- 112          {
- 113   1              code unsigned long Tab[] = {10000000,1000000,100000,10000,1000,100,10};
- 114   1              unsigned char i;
- 115   1              unsigned char t;
- 116   1              for ( i=0; i<7; i++ )
- 117   1              {
-C51 COMPILER V8.02   MAIN                                                                  04/04/2019 21:20:24 PAGE 3   
+  56          参数：
+  57                  x：数码管的坐标位置（0～7）
+  58                  c：要显示的字符（仅限16进制数字和减号）
+  59          */
+  60          
+  61          void DispChar(unsigned char x, unsigned char c )
+  62          {
+  63   1              code unsigned char Tab[] =
+  64   1              {//定义0123456789AbCdEF的数码管字型数据
+  65   1                      0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,
+  66   1                      0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71
+  67   1              };
+  68   1              unsigned char t;        //临时变量
+  69   1      //防止显示位置超出范围  
+  70   1          x&=0x07;
+  71   1              x = 7-x ;
+  72   1      //分析字符c，取得对应的数码管字型数据
+  73   1              if ( c == '-' )
+  74   1              {
+  75   2                      t = 0x40;
+  76   2              }
+  77   1              else
+  78   1              {
+  79   2                      t = toint(c);   //toint()为库函数
+  80   2                      if ( t < 16 )   //如果是16进制字符
+  81   2                      {
+  82   3                              t = Tab[t];     //查表，取得数码管字型数据
+  83   3                      }
+  84   2                      else
+  85   2                      {
+  86   3                              t = 0x00;       //如果是其它字符则显示为空白
+  87   3                      }
+  88   2              }
+  89   1      
+  90   1      //检查是否显示小数点
+  91   1              if ( x==dp_num )
+  92   1              {
+  93   2                      t |= 0x80;
+  94   2              }
+  95   1              else
+  96   1              {
+  97   2                      t &= 0x7F;
+  98   2              }
+  99   1              
+ 100   1      //送到显示缓冲区显示
+ 101   1              DispBuf[x] = t;
+ 102   1      }
+ 103          
+ 104          /*
+ 105          函数：DispStr()
+ 106          功能：在数码管上显示字符串
+ 107          参数：
+ 108                  x：显示的起始位置（0～7）
+ 109                  *s：要显示的字符串（内容仅限16进制数字和减号）
+ 110          */
+ 111          
+ 112          void DispStr(unsigned char x, unsigned char idata *s)
+ 113          {
+ 114   1              unsigned char c;
+ 115   1              for (;;)
+ 116   1              {
+ 117   2                      c = *s++;
+C51 COMPILER V8.02   MAIN                                                                  04/06/2019 21:12:39 PAGE 3   
 
- 118   2                      t = c / Tab[i];
- 119   2                      *s++ = '0' + t;
- 120   2                      c -= t * Tab[i];
- 121   2              }
- 122   1              *s++ = '0' + c;
- 123   1              *s = '\0';
+ 118   2                      if ( c == '\0' ) break;
+ 119   2                      if ( ((c=='0') && ((++c)!='0') && (+++c)!='0') )
+ 120   2                      {DispChar(x++,'+');continue;}           //消影，清除无意义的零
+ 121   2                      //{x++;continue;}
+ 122   2                      DispChar(x++,c);
+ 123   2              }
  124   1      }
  125          
- 126          void DispInit()
- 127          {
- 128   1              DispClear();    //初始为全灭
- 129   1              EA = 0;
- 130   1              TMOD = 0x15;
- 131   1          TH1 = 0xFA;
- 132   1              TL1 = 0x24;
- 133   1              TR1 = 1;
- 134   1              ET0 = 1;
- 135   1              EA = 1;
- 136   1      }
- 137          
- 138          
- 139          void Delay(unsigned int t)
- 140          {
- 141   1              do
- 142   1              {
- 143   2                      code unsigned char com[] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
- 144   2                      static unsigned char n = 0;
- 145   2                      TH1 = 0xFA;
- 146   2                      TL1 = 0x24;
- 147   2                      TR1 = 1;
- 148   2                  while ( !TF1 );
- 149   2                      TR1 = 0;
- 150   2                      TF1=0;
- 151   2                  TH1 = 0xFA;
- 152   2                      TL1 = 0x24;
- 153   2                      TR1 = 1;
- 154   2                      XBYTE[0x7800] = 0xFF;           //暂停显示
- 155   2                      XBYTE[0x7801] = ~DispBuf[n];    //更新扫描数据
- 156   2                      XBYTE[0x7800] = ~com[n];        //重新显示
- 157   2                      n++;
- 158   2                  n&=0x07;    
- 159   2              } while ( --t != 0 );
- 160   1      }
- 161          
- 162          
- 163          /*
- 164          函数：SysInit()
- 165          功能：系统初始化
- 166          */
- 167          void SysInit()
- 168          {
- 169   1      
- 170   1              TMOD = 0x15;    //设置定时器T1为16位定时器 T0为计数器
- 171   1              DispInit();             //数码管扫描显示初始化
- 172   1      }
- 173          /*
- 174          void Key_function(unsigned char k)
- 175          {
- 176                   switch(k)
- 177                          {
- 178                           case '1':
- 179                              key_num=1;
-C51 COMPILER V8.02   MAIN                                                                  04/04/2019 21:20:24 PAGE 4   
+ 126          /*
+ 127          函数：ByteToStr()
+ 128          功能：字节型变量c转换为十进制字符串
+ 129          */
+ 130          
+ 131          void ByteToStr(unsigned char idata *s, unsigned long c)
+ 132          {
+ 133   1              code unsigned long Tab[] = {10000000,1000000,100000,10000,1000,100,10};
+ 134   1              unsigned char i;
+ 135   1              unsigned char t;
+ 136   1              for ( i=0; i<7; i++ )
+ 137   1              {
+ 138   2                      t = c / Tab[i];
+ 139   2                      *s++ = '0' + t;
+ 140   2                      c -= t * Tab[i];
+ 141   2              }
+ 142   1              *s++ = '0' + c;
+ 143   1              *s = '\0';
+ 144   1      }
+ 145          
+ 146          void DispInit()
+ 147          {
+ 148   1              DispClear();    //初始为全灭
+ 149   1              EA = 0;
+ 150   1              TMOD = 0x15;
+ 151   1          TH1 = 0xFA;
+ 152   1              TL1 = 0x24;
+ 153   1              TR1 = 1;
+ 154   1              ET0 = 1;
+ 155   1              EA = 1;
+ 156   1      }
+ 157          
+ 158          
+ 159          void Delay(unsigned int t)
+ 160          {
+ 161   1              do
+ 162   1              {
+ 163   2                      code unsigned char com[] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
+ 164   2                      static unsigned char n = 0;
+ 165   2                      TH1 = 0xFA;
+ 166   2                      TL1 = 0x24;
+ 167   2                      TR1 = 1;
+ 168   2                  while ( !TF1 );
+ 169   2                      TR1 = 0;
+ 170   2                      TF1=0;
+ 171   2                  TH1 = 0xFA;
+ 172   2                      TL1 = 0x24;
+ 173   2                      TR1 = 1;
+ 174   2                      XBYTE[0x7800] = 0xFF;           //暂停显示
+ 175   2                      XBYTE[0x7801] = ~DispBuf[n];    //更新扫描数据
+ 176   2                      XBYTE[0x7800] = ~com[n];        //重新显示
+ 177   2                      n++;
+ 178   2                  n&=0x07;    
+ 179   2              } while ( --t != 0 );
+C51 COMPILER V8.02   MAIN                                                                  04/06/2019 21:12:39 PAGE 4   
 
- 180                           break;
+ 180   1      }
  181          
- 182                           case '2':
- 183                                   key_num=2;     
- 184                           break;
- 185                           
- 186                       case '3':
- 187                                   key_num=3;
- 188                           break;
- 189                                  
- 190                           default:
- 191                           break;
- 192                          }
- 193          }
+ 182          
+ 183          /*
+ 184          函数：SysInit()
+ 185          功能：系统初始化
+ 186          */
+ 187          void SysInit()
+ 188          {
+ 189   1      
+ 190   1              TMOD = 0x15;    //设置定时器T1为16位定时器 T0为计数器
+ 191   1              DispInit();             //数码管扫描显示初始化
+ 192   1      }
+ 193          
  194          
- 195           */
- 196          void Gate_select()
- 197          {
- 198   1              switch ( k )            //判断键值，执行具体功能
- 199   1                      {
- 200   2                              case '1':
- 201   2                                  LED1=0;                                     //1s 1hz
- 202   2                                      LED2=1;
- 203   2                                      LED3=1;
- 204   2                                      TR0 = 1;
- 205   2                                      TH0 = 0x00;
- 206   2                                  TL0 = 0x00;
- 207   2                                      Delay(1000);
- 208   2                                      TR0 = 0;
- 209   2                                      break;
- 210   2              
- 211   2                              case '2':
- 212   2                              LED1=1;                                 //100ms
- 213   2                                      LED2=0;
- 214   2                                      LED3=1;
- 215   2                                      TR0 = 1;
- 216   2                                      TH0 = 0x00;
- 217   2                                  TL0 = 0x00;                 
- 218   2                                      Delay(100);                     
- 219   2                                  TR0 = 0;
- 220   2                                      break;
- 221   2              
- 222   2                              case '3':
- 223   2                                  LED1=1;                                     //10ms
- 224   2                                      LED2=1;
- 225   2                                      LED3=0;
- 226   2                                      TR0 = 1;
- 227   2                                      TH0 = 0x00;
- 228   2                                  TL0 = 0x00;
- 229   2                                      Delay(10);
- 230   2                                      TR0 = 0; 
- 231   2                                      break;
- 232   2              
- 233   2                              default:
- 234   2                                      break;
- 235   2                      }       
- 236   1              
- 237   1      }
- 238          
- 239          void Dp_select()
- 240          {
- 241   1              switch ( k )            //判断键值，执行具体功能
-C51 COMPILER V8.02   MAIN                                                                  04/04/2019 21:20:24 PAGE 5   
+ 195          
+ 196          
+ 197          void Gate_select(unsigned char k)
+ 198          {
+ 199   1              switch ( k )            //判断键值，执行具体功能
+ 200   1                      {
+ 201   2                              case '1':
+ 202   2                                  LED1=0;                                     //1s 1hz
+ 203   2                                      LED2=1;
+ 204   2                                      LED3=1;
+ 205   2                                      TR0 = 1;
+ 206   2                                      TH0 = 0x00;
+ 207   2                                  TL0 = 0x00;
+ 208   2                                      Delay(1000);
+ 209   2                                      TR0 = 0;
+ 210   2                                      break;
+ 211   2              
+ 212   2                              case '2':
+ 213   2                              LED1=1;                                 //100ms
+ 214   2                                      LED2=0;
+ 215   2                                      LED3=1;
+ 216   2                                      TR0 = 1;
+ 217   2                                      TH0 = 0x00;
+ 218   2                                  TL0 = 0x00;                 
+ 219   2                                      Delay(100);                     
+ 220   2                                  TR0 = 0;
+ 221   2                                      break;
+ 222   2              
+ 223   2                              case '3':
+ 224   2                                  LED1=1;                                     //10ms
+ 225   2                                      LED2=1;
+ 226   2                                      LED3=0;
+ 227   2                                      TR0 = 1;
+ 228   2                                      TH0 = 0x00;
+ 229   2                                  TL0 = 0x00;
+ 230   2                                      Delay(10);
+ 231   2                                      TR0 = 0; 
+ 232   2                                      break;
+ 233   2              
+ 234   2                              default:
+ 235   2                                      break;
+ 236   2                      }       
+ 237   1              
+ 238   1      }
+ 239          
+ 240          void Dp_select()
+ 241          {
+C51 COMPILER V8.02   MAIN                                                                  04/06/2019 21:12:39 PAGE 5   
 
- 242   1                      {
- 243   2                              case '1':
- 244   2                                      dp_num=3;
- 245   2                                      break;
- 246   2              
- 247   2                              case '2':
- 248   2                                      dp_num=2;
- 249   2                                      break;
- 250   2              
- 251   2                              case '3':
- 252   2                                      dp_num=1;
- 253   2                                      break;
- 254   2              
- 255   2                              default:
- 256   2                                      break;
- 257   2                      }
- 258   1      }
- 259          
- 260          unsigned long Frequency_calculate()
- 261          {
- 262   1              unsigned long T0_final= 0x00;   //定义T0计数器计算值
- 263   1              unsigned long Frequency= 0x00;          //定义频率变量
- 264   1          T0_final=TH0*256+TL0+T0_count*65536;  //计算脉冲数
- 265   1              T0_final=T0_final-T0_final/1000*4;        //误差修正
- 266   1              //T0_final=T0_final-T0_final/100000;      //误差修正
- 267   1      
- 268   1              switch ( k )            
- 269   1              {
- 270   2                      case '1':
- 271   2                              Frequency=T0_final;
- 272   2                              break;
- 273   2              
- 274   2                      case '2':
- 275   2                          Frequency=T0_final*10;
- 276   2                              break;
- 277   2              
- 278   2                      case '3':
- 279   2                              Frequency=T0_final*100;
- 280   2                              break;
- 281   2              
- 282   2                      default:
- 283   2                              Frequency=T0_final*10;
- 284   2                              break;
- 285   2              }
- 286   1              
- 287   1              T0_count=0;             //T0 置零，准备重新开始下一次计数
- 288   1              return Frequency;
- 289   1      }
- 290          
- 291          void main()
- 292          {
- 293   1              unsigned char idata s[16];
- 294   1              unsigned long Frequency = 5555;         //定义频率变量
- 295   1              SysInit();                              //系统初始化
- 296   1              ByteToStr(s,Frequency);
- 297   1              DispStr(8,s);           //显示初始值
- 298   1              Delay(200);
- 299   1              for (;;)
- 300   1              {
+ 242   1              switch ( k )            //判断键值，执行具体功能
+ 243   1                      {
+ 244   2                              case '1':
+ 245   2                                      dp_num=3;
+ 246   2                                      break;
+ 247   2              
+ 248   2                              case '2':
+ 249   2                                      dp_num=2;
+ 250   2                                      break;
+ 251   2              
+ 252   2                              case '3':
+ 253   2                                      dp_num=1;
+ 254   2                                      break;
+ 255   2              
+ 256   2                              default:
+ 257   2                                      break;
+ 258   2                      }
+ 259   1      }
+ 260          
+ 261          unsigned long Frequency_calculate()
+ 262          {
+ 263   1              unsigned long T0_final; //定义T0计数器计算值
+ 264   1              unsigned long Frequency;                //定义频率变量
+ 265   1          T0_final=TH0*256+TL0+T0_count*65536;  //计算脉冲数
+ 266   1              T0_final=T0_final-T0_final/1000*4;        //误差修正
+ 267   1              //T0_final=T0_final-T0_final/100000;      //误差修正
+ 268   1      
+ 269   1      
+ 270   1              Frequency=T0_final;
+ 271   1              Dp_select();
+ 272   1              
+ 273   1              T0_count=0;             //T0 置零，准备重新开始下一次计数
+ 274   1              return Frequency;
+ 275   1      }
+ 276          
+ 277          void main()
+ 278          {
+ 279   1              unsigned char idata s[16];
+ 280   1              unsigned long Frequency = 5555;         //定义频率变量
+ 281   1              SysInit();                              //系统初始化
+ 282   1              ByteToStr(s,Frequency);
+ 283   1              DispStr(8,s);           //显示初始值
+ 284   1              Delay(200);
+ 285   1              for (;;)
+ 286   1              {
+ 287   2                      for (;;)
+ 288   2                      {
+ 289   3                              Delay(10);              
+ 290   3                              k = KeyScan();  //键盘扫描
+ 291   3                              if ( k != '\0' ) break;         //如果有键按下，退出循环
+ 292   3                      }  
+ 293   2      
+ 294   2                              Gate_select(k);   //选择闸门
+ 295   2                              Frequency = Frequency_calculate();//计算频率
+ 296   2                              Dp_select();                            
+ 297   2                              ByteToStr(s,Frequency);
+ 298   2                              DispStr(8,s);   //显示计数器值
+ 299   2      
+ 300   2                      
  301   2                      for (;;)
  302   2                      {
- 303   3                              Delay(20);              //延时50ms
-C51 COMPILER V8.02   MAIN                                                                  04/04/2019 21:20:24 PAGE 6   
+ 303   3                              Delay(10);              
+C51 COMPILER V8.02   MAIN                                                                  04/06/2019 21:12:39 PAGE 6   
 
- 304   3                              k = KeyScan();  //键盘扫描
- 305   3                              if ( k != '\0' ) break;         //如果有键按下，退出循环
- 306   3                      }  
- 307   2                      
- 308   2                              Gate_select();    //选择闸门
- 309   2                      
- 310   2                              Frequency = Frequency_calculate();//计算频率
- 311   2                              Dp_select();                            
- 312   2                              ByteToStr(s,Frequency);
- 313   2                              DispStr(8,s);   //显示计数器值
- 314   2      
- 315   2                      
- 316   2                      for (;;)
- 317   2                      {
- 318   3                              Delay(20);              //延时50ms
- 319   3                              if ( KeyScan() == '\0' ) break; //如果按键抬起，退出循环
- 320   3                      }
- 321   2              }                 
- 322   1      
- 323   1      }
- 324          
+ 304   3                              if ( KeyScan() == '\0' ) break; //如果按键抬起，退出循环
+ 305   3                      }
+ 306   2              }                 
+ 307   1      
+ 308   1      }
+ 309          
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    752    ----
+   CODE SIZE        =    678    ----
    CONSTANT SIZE    =     52    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =     13      23
+   DATA SIZE        =     13      19
    IDATA SIZE       =   ----      16
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

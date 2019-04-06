@@ -16,8 +16,8 @@ sbit LED3 = P0^2;
 unsigned char DispBuf[8];
 unsigned char T0_count=0;	  //计数器T0溢出次数
 unsigned char key_num=2;		  //闸门序号
-unsigned char dp_num=2;		  //小数点位置
-unsigned char k='0';		//定义键值变量
+unsigned char dp_num=0;		  //小数点位置
+unsigned char k;		//定义键值变量
 //extern unsigned char num_long=0;
 
 unsigned char KeyScan()			//键盘扫描
@@ -50,6 +50,13 @@ void DispClear()
 	}
 }
 
+/*
+函数：DispChar()
+功能：在数码管上显示字符
+参数：
+	x：数码管的坐标位置（0～7）
+	c：要显示的字符（仅限16进制数字和减号）
+*/
 
 void DispChar(unsigned char x, unsigned char c )
 {
@@ -94,6 +101,13 @@ void DispChar(unsigned char x, unsigned char c )
 	DispBuf[x] = t;
 }
 
+/*
+函数：DispStr()
+功能：在数码管上显示字符串
+参数：
+	x：显示的起始位置（0～7）
+	*s：要显示的字符串（内容仅限16进制数字和减号）
+*/
 
 void DispStr(unsigned char x, unsigned char idata *s)
 {
@@ -102,11 +116,17 @@ void DispStr(unsigned char x, unsigned char idata *s)
 	{
 		c = *s++;
 		if ( c == '\0' ) break;
-		if ( c=='0'&&(++c)!='0'&&x!=(dp_num+1)) 		//消影，清除无意义的零
-		{x++;continue;}
+		if ( ((c=='0') && ((++c)!='0')) )
+		{DispChar(x++,'+');continue;} 		//消影，清除无意义的零
+		//{x++;continue;}
 		DispChar(x++,c);
 	}
 }
+
+/*
+函数：ByteToStr()
+功能：字节型变量c转换为十进制字符串
+*/
 
 void ByteToStr(unsigned char idata *s, unsigned long c)
 {
@@ -170,30 +190,11 @@ void SysInit()
 	TMOD = 0x15;	//设置定时器T1为16位定时器 T0为计数器
 	DispInit();		//数码管扫描显示初始化
 }
-/*
-void Key_function(unsigned char k)
-{
-	 switch(k)
-		{
-		 case '1':
-		    key_num=1;
-		 break;
 
-		 case '2':
-			 key_num=2;	
-		 break;
-		 
-	     case '3':
-			 key_num=3;
-		 break;
-			
-		 default:
-		 break;
-		}
-}
 
- */
-void Gate_select()
+
+
+void Gate_select(unsigned char k)
 {
 	switch ( k )		//判断键值，执行具体功能
 		{
@@ -259,30 +260,15 @@ void Dp_select()
 
 unsigned long Frequency_calculate()
 {
-	unsigned long T0_final= 0x00;	//定义T0计数器计算值
-	unsigned long Frequency= 0x00;		//定义频率变量
+	unsigned long T0_final;	//定义T0计数器计算值
+	unsigned long Frequency;		//定义频率变量
     T0_final=TH0*256+TL0+T0_count*65536;  //计算脉冲数
 	T0_final=T0_final-T0_final/1000*4;	  //误差修正
 	//T0_final=T0_final-T0_final/100000;	  //误差修正
 
-	switch ( k )		
-	{
-		case '1':
-			Frequency=T0_final;
-			break;
-	
-		case '2':
-		    Frequency=T0_final*10;
-			break;
-	
-		case '3':
-			Frequency=T0_final*100;
-			break;
-	
-		default:
-			Frequency=T0_final*10;
-			break;
-	}
+
+	Frequency=T0_final;
+	Dp_select();
 	
 	T0_count=0;		//T0 置零，准备重新开始下一次计数
 	return Frequency;
@@ -300,13 +286,12 @@ void main()
 	{
 		for (;;)
 		{
-			Delay(20);		//延时50ms
+			Delay(10);		
 			k = KeyScan();	//键盘扫描
 			if ( k != '\0' ) break;		//如果有键按下，退出循环
 		}  
-		
-			Gate_select();	  //选择闸门
-		
+
+			Gate_select(k);	  //选择闸门
 			Frequency = Frequency_calculate();//计算频率
 			Dp_select();				
 			ByteToStr(s,Frequency);
@@ -315,7 +300,7 @@ void main()
 		
 		for (;;)
 		{
-			Delay(20);		//延时50ms
+			Delay(10);		
 			if ( KeyScan() == '\0' ) break;	//如果按键抬起，退出循环
 		}
 	}		  
